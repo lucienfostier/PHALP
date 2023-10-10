@@ -56,11 +56,12 @@ class Visualizer(nn.Module):
                                metallicFactor=self.cfg.render.metallicfactor, roughnessFactor=self.cfg.render.roughnessfactor)
         self.render_size = image_size      
         
-    def render_single_frame(self, pred_smpl_params, pred_cam_t, color, img_size = 256, image=None, use_image=False):
-                
+    def render_single_frame(self, pred_smpl_params, pred_cam_t, color, img_size = 256, image=None, use_image=False, frameNumber=None):
+        import trimesh
         pred_smpl_params = default_collate(pred_smpl_params)
         smpl_output = self.hmar.smpl(**{k: v.float().cuda() for k,v in pred_smpl_params.items()}, pose2rot=False)
         pred_vertices = smpl_output.vertices.cpu()
+        trimesh.Trimesh( pred_vertices ).export( "/content/output/geo.{:04d}.obj".format( frameNumber ) )
 
         # a1 = pred_vertices[0, :, 2]>0.1
         # a2 = a1.nonzero()
@@ -281,7 +282,7 @@ class Visualizer(nn.Module):
         cv_image     = final_visuals_dic['frame']
         tracked_ids  = final_visuals_dic["tid"]
         tracked_time = final_visuals_dic["tracked_time"]
-        
+        print( final_visuals_dic )
         tracked_mask = final_visuals_dic["mask"]
         tracked_bbox = final_visuals_dic["bbox"]
         
@@ -363,6 +364,7 @@ class Visualizer(nn.Module):
                                                                             img_size   = render_image_size, 
                                                                             image      = (0*image_resized)/255.0, 
                                                                             use_image  = True,
+                                                                            frameNumber = t_
                                                                             )
 
                     rendered_image_final = numpy_to_torch_image(np.array(rendered_image_final))
